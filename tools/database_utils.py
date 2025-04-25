@@ -29,12 +29,16 @@ def _build_db_url(db_type: str, host: str, port: int, username: str, password: s
     )
 
 class DBSchemaExtractor:
-    def __init__(self, db_type: str, host: str, port: int, username: str, password: str, database: str):
+    def __init__(self, db_type: str, host: str, port: int, username: str, password: str, database: str, schema: str | None = None):
         db_url = _build_db_url(db_type, host, port, username, password, database)
-        self.engine = create_engine(db_url)
+        connect_args = {}
+        if db_type.lower() == 'postgresql' and schema:
+            connect_args = {'options': f'-csearch_path={schema}'}
+        self.engine = create_engine(db_url, connect_args=connect_args)
         self.inspector = inspect(self.engine)
         self.db_type = db_type
         self.username = username
+        self.schema = schema # Store schema if provided
 
     def get_all_tables_schema(self, table_names: str | None = None) -> Dict:
         schemas = {}
@@ -44,6 +48,9 @@ class DBSchemaExtractor:
             with self.engine.connect() as conn:
                 result = conn.execute(text("SHOW TABLES;")).fetchall()
                 all_table_names = [row[0] for row in result]
+        # For PostgreSQL, specify schema if provided
+        elif self.db_type == "postgresql" and self.schema:
+             all_table_names = self.inspector.get_table_names(schema=self.schema)
         else:
             all_table_names = self.inspector.get_table_names()
 
@@ -63,9 +70,12 @@ class DBSchemaExtractor:
         elif self.db_type == "doris":
             return self._get_doris_table_schema(table_name)
         else:
+            schema_arg = self.schema if self.db_type == 'postgresql' and self.schema else None
             schema = {"table_name": table_name, "comment": "", "columns": []}
             schema["comment"] = self._get_table_comment(table_name)
-            for column in self.inspector.get_columns(table_name):
+            # Pass schema to get_columns if it's PostgreSQL and schema is set
+            columns = self.inspector.get_columns(table_name, schema=schema_arg)
+            for column in columns:
                 schema["columns"].append({
                     "name": column["name"],
                     "comment": (column.get("comment") or "").replace("\n", ""),
@@ -78,7 +88,9 @@ class DBSchemaExtractor:
         if self.db_type == "mysql":
             query = f"SELECT table_comment FROM information_schema.tables WHERE table_name = '{table_name}';"
         elif self.db_type == "postgresql":
-            query = f"SELECT obj_description('{table_name}'::regclass, 'pg_class');"
+            # Include schema in the query if it exists
+            schema_prefix = f"'{self.schema}'." if self.schema else ""
+            query = f"SELECT d.description FROM pg_catalog.pg_description d JOIN pg_catalog.pg_class c ON c.oid = d.objoid JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = '{table_name}' AND n.nspname = '{self.schema or 'public'}' AND d.objsubid = 0;"
         elif self.db_type == "mssql":
             query = f"SELECT cast(EP.value as nvarchar(500)) FROM sys.tables T INNER JOIN sys.extended_properties EP ON T.object_id = EP.major_id WHERE T.name = '{table_name}' AND EP.minor_id = 0;"
         elif self.db_type == "doris":

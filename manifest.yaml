@@ -1,4 +1,4 @@
-version: 0.0.4
+version: 0.0.5
 type: plugin
 author: majinkai
 name: database_to_knowledge
@@ -30,7 +30,7 @@ plugins:
 tags:
 - utilities
 meta:
-  version: 0.0.4
+  version: 0.0.5
   arch:
     - amd64
     - arm64

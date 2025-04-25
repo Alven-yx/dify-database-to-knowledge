@@ -15,7 +15,8 @@ class DatabaseToKnowledgeTool(Tool):
             tool_parameters.get("port"),
             tool_parameters.get("username"),
             tool_parameters.get("password"),
-            tool_parameters.get("database")
+            tool_parameters.get("database"),
+            tool_parameters.get("schema") # Pass schema parameter
         )
 
         dify_knowledge_api_url = self.runtime.credentials.get("dify_knowledge_api_url")

@@ -97,6 +97,20 @@ parameters:
       zh_Hans: 密码
     llm_description: Password
     form: form
+  - name: schema
+    type: string
+    required: false
+    label:
+      en_US: Schema (PostgreSQL only)
+      zh_Hans: Schema (仅限 PostgreSQL)
+    human_description:
+      en_US: Optional schema name for PostgreSQL connection.
+      zh_Hans: PostgreSQL 连接的可选 schema 名称。
+    llm_description: Optional schema name for PostgreSQL connection.
+    form: form
+    show_on:
+      - variable: db_type
+        value: postgresql
   - name: table_names
     type: string
     label:

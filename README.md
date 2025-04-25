@@ -1,7 +1,8 @@
 ## Database to knowledge
 
-**Author:** majinkai
-**Version:** 0.0.2
+**Author:** majinkai 
+**Attribution:** Alven-yx
+**Version:** 0.0.5
 **Type:** tool
 
 ### How to use
