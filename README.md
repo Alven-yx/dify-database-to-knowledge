@@ -1,9 +1,13 @@
 ## Database to knowledge
 
-**Author:** majinkai 
-**Attribution:** Alven-yx
-**Version:** 0.0.6
-**Type:** tool
+- **Version:** 0.0.6
+- **Type:** Dify Plugin
+
+### Author & Attribution
+- **Original Author**: [majinkai](https://github.com/majinkai/dify-database-to-knowledge)
+  This project is derived from the original work by majinkai.
+- **Current Maintainer**: [Alven-yx](https://github.com/Alven-yx/dify-database-to-knowledge)
+  This fork includes modifications and enhancements by Alven-yx.
 
 ### How to use
 
