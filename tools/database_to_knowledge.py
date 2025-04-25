@@ -26,6 +26,12 @@ class DatabaseToKnowledgeTool(Tool):
         rerank_model = tool_parameters.get("rerank_model")
 
         api = DifyKnowledgeRequest(dify_knowledge_api_url, dify_knowledge_api_key, embedding_model, rerank_model)
-        dataset_id = api.write_database_schema(extractor.get_all_tables_schema(tool_parameters.get("table_names")), tool_parameters.get("database"))
+        # 获取可选的dataset_id参数
+        existing_dataset_id = tool_parameters.get("dataset_id")
+        dataset_id = api.write_database_schema(
+            schema=extractor.get_all_tables_schema(tool_parameters.get("table_names")),
+            database=tool_parameters.get("database"),
+            dataset_id=existing_dataset_id
+        )
 
         yield self.create_text_message(dataset_id)

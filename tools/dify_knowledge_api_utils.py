@@ -105,15 +105,66 @@ class DifyKnowledgeRequest:
         res = self._send_request(url, json=json)
         return res.get("document")
 
-    def write_database_schema(self, schema: dict[str, Any], database: str) -> str:
+    def _get_dataset_detail(self, dataset_id: str) -> dict:
+        """
+        获取知识库详情
+        :param dataset_id: 知识库ID
+        :return: 知识库详情
+        """
+        url = f"{self.dify_knowledge_api_url}/datasets/{dataset_id}"
+        res = self._send_request(url, method="get")
+        return res
+
+    def _get_documents(self, dataset_id: str, keyword: Optional[str] = None, page: int = 1, limit: int = 100) -> dict:
+        """
+        获取知识库文档列表
+        :param dataset_id: 知识库ID
+        :param keyword: 搜索关键词，可选，目前仅搜索文档名称
+        :param page: 页码，可选
+        :param limit: 返回条数，可选，默认20，范围1-100
+        :return: 文档列表
+        """
+        url = f"{self.dify_knowledge_api_url}/datasets/{dataset_id}/documents"
+        params = {
+            "page": page,
+            "limit": limit
+        }
+        if keyword:
+            params["keyword"] = keyword
+        res = self._send_request(url, method="get", params=params)
+        return res
+
+    def _delete_document(self, dataset_id: str, document_id: str) -> dict:
+        """
+        删除文档
+        :param dataset_id: 知识库ID
+        :param document_id: 文档ID
+        :return: 删除结果
+        """
+        url = f"{self.dify_knowledge_api_url}/datasets/{dataset_id}/documents/{document_id}"
+        res = self._send_request(url, method="delete")
+        return res
+
+    def write_database_schema(self, schema: dict[str, Any], database: str, dataset_id: Optional[str] = None) -> str:
         """
         将数据库schema写入知识库
         :param schema: 数据库schema信息
         :param database: 数据库名
+        :param dataset_id: 知识库ID，可选，如果提供则使用现有知识库
+        :return: 知识库ID
         """
         try:
-            # 创建知识库
-            dataset_id = self._create_dataset(dataset_name=database)
+            # 如果没有提供知识库ID，则创建新的知识库
+            if not dataset_id:
+                dataset_id = self._create_dataset(dataset_name=database)
+            else:
+                # 验证知识库是否存在
+                try:
+                    self._get_dataset_detail(dataset_id)
+                except Exception as e:
+                    print(f"Knowledge base with ID {dataset_id} does not exist: {str(e)}")
+                    # 如果知识库不存在，则创建新的知识库
+                    dataset_id = self._create_dataset(dataset_name=database)
 
             # 为每个表创建文档
             for table_name, table_info in schema.items():
@@ -124,6 +175,17 @@ class DifyKnowledgeRequest:
                 # 添加字段信息
                 for column in table_info["columns"]:
                     document_text += f"{column["name"]}|{column["type"]}|{column["comment"]}\n"
+
+                # 检查并删除同名文档
+                try:
+                    # 查询文档列表
+                    documents = self._get_documents(dataset_id=dataset_id, keyword=document_name)
+                    # 删除同名文档
+                    for doc in documents.get("data", []):
+                        if doc.get("name") == document_name:
+                            self._delete_document(dataset_id=dataset_id, document_id=doc.get("id"))
+                except Exception as e:
+                    print(f"Failed to check or delete existing document: {str(e)}")
 
                 # 创建文档
                 document_dict = self._create_document_by_text(dataset_id=dataset_id, document_name=document_name, document_text=f'{document_text}\n')

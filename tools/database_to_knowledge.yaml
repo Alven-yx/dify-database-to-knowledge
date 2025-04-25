@@ -121,6 +121,17 @@ parameters:
       zh_Hans: 表名(逗号分隔)
     llm_description: Table names
     form: form
+  - name: dataset_id
+    type: string
+    required: false
+    label:
+      en_US: Knowledge Base ID
+      zh_Hans: 知识库ID
+    human_description:
+      en_US: Existing knowledge base ID. If provided, the tool will update the existing knowledge base instead of creating a new one.
+      zh_Hans: 现有知识库ID。如果提供，工具将更新现有知识库而不是创建新的知识库。
+    llm_description: Existing knowledge base ID. If provided, the tool will update the existing knowledge base instead of creating a new one.
+    form: form
   - name: embedding_model
     type: model-selector
     scope: text-embedding
